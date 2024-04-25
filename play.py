@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
+from bots import OneCardBot, MultiCardBot
 from pyminion.bots.examples import BigMoney
 from pyminion.core import Card
-from pyminion.expansions.base import base_set, witch
+from pyminion.expansions.base import (
+    base_set,
+    village,
+    witch,
+)
 from pyminion.expansions.intrigue import intrigue_set
 from pyminion.expansions.seaside import seaside_set
 from pyminion.game import Game
@@ -10,12 +15,20 @@ from pyminion.human import Human
 from pyminion.player import Player
 
 def main() -> None:
-    players: list[Player] = [
-        BigMoney(),
-        Human(),
+    players: list[Player] = []
+
+    one_card_bot = OneCardBot(witch)
+    players.append(one_card_bot)
+
+    card_counts: list[tuple[int, Card]] = [
+        (2, village),
+        (2, witch),
     ]
+    multi_card_bot = MultiCardBot(card_counts)
+    players.append(multi_card_bot)
 
     kingdom_cards: list[Card] = [
+        village,
         witch,
     ]
 
