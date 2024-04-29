@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from bots import OneCardBot
 from pyminion.bots.examples import BigMoney
 from pyminion.core import Card
@@ -14,8 +15,7 @@ import sys
 import time
 from typing import Iterable
 
-def run_sim(players: list[Player], kingdom_cards: list[Card], iterations: int) -> SimulatorResult:
-    seed = time.time_ns() & 0xffff_ffff
+def run_sim(players: list[Player], kingdom_cards: list[Card], iterations: int, seed: int) -> SimulatorResult:
     random.seed(seed)
 
     expansions = [base_set, intrigue_set, seaside_set]
@@ -32,12 +32,12 @@ def run_sim(players: list[Player], kingdom_cards: list[Card], iterations: int) -
     try:
         result = sim.run()
     except:
-        print(f'seed={seed}, iterations={iterations}', file=sys.stderr)
+        print(f'seed={seed}, iterations={iterations}, kingdom={kingdom_cards}', file=sys.stderr)
         raise
 
     return result
 
-def rank_cards(cards: Iterable[Card], iterations: int) -> list[tuple[float, Card]]:
+def rank_cards(cards: Iterable[Card], iterations: int, seed: int) -> list[tuple[float, Card]]:
     ranked_cards: list[tuple[float, Card]] = []
     for card in cards:
         one_card_bot = OneCardBot(card)
@@ -47,7 +47,7 @@ def rank_cards(cards: Iterable[Card], iterations: int) -> list[tuple[float, Card
             big_money_bot,
         ]
 
-        result = run_sim(players, [card], iterations)
+        result = run_sim(players, [card], iterations, seed)
 
         for player_result in result.player_results:
             if player_result.player is one_card_bot:
@@ -58,14 +58,24 @@ def rank_cards(cards: Iterable[Card], iterations: int) -> list[tuple[float, Card
     ranked_cards.sort(key=lambda x: x[0], reverse=True)
     return ranked_cards
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--iterations', type=int, default=100, help='number of simulation iterations')
+    parser.add_argument('-s', '--seed', type=int, help='random seed')
+
+    args = parser.parse_args()
+    return args
+
 def main() -> None:
-    if len(sys.argv) > 1:
-        iterations = int(sys.argv[1])
+    args = parse_args()
+
+    if args.seed is None:
+        seed = time.time_ns() & 0xffff_ffff
     else:
-        iterations = 100
+        seed: int = args.seed
 
     cards = base_set + intrigue_set + seaside_set
-    ranked_cards = rank_cards(cards, iterations)
+    ranked_cards = rank_cards(cards, args.iterations, seed)
     for score, card in ranked_cards:
         print(f'{score:.1%}: {card.name}')
 
