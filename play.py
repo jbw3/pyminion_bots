@@ -5,6 +5,9 @@ from pyminion.bots.examples import BigMoney
 from pyminion.core import Card
 from pyminion.expansions.base import (
     base_set,
+    silver,
+    gold,
+    chapel,
     village,
     witch,
 )
@@ -21,6 +24,8 @@ def main() -> None:
     players.append(one_card_bot)
 
     card_counts: list[tuple[int, Card]] = [
+        (2, silver),
+        (1, chapel),
         (2, village),
         (2, witch),
     ]
@@ -28,6 +33,7 @@ def main() -> None:
     players.append(multi_card_bot)
 
     kingdom_cards: list[Card] = [
+        chapel,
         village,
         witch,
     ]
