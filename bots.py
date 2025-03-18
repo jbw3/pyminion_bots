@@ -9,6 +9,9 @@ from pyminion.expansions.base import (
     silver,
     gold,
 )
+from pyminion.expansions.alchemy import (
+    potion,
+)
 from pyminion.game import Game
 from pyminion.player import Player
 from typing import Iterator
@@ -55,7 +58,7 @@ class OneCardBot(OptimizedBot):
 
 class MultiCardBotDecider(OptimizedBotDecider):
     def __init__(self, card_counts: list[tuple[int, Card]]):
-        self.card_counts = card_counts
+        self.card_counts = card_counts[:]
         self.greening = False
 
         card_names: set[str] = set(c.name for _, c in self.card_counts)
@@ -63,6 +66,8 @@ class MultiCardBotDecider(OptimizedBotDecider):
             self.card_counts.append((1, silver))
         if "Gold" not in card_names:
             self.card_counts.append((2, gold))
+        if "Potion" not in card_names and any(c.base_cost.potions > 0 for _, c in self.card_counts):
+            self.card_counts.append((1, potion))
 
     def action_priority(self, player: "Player", game: "Game") -> Iterator[Card]:
         while player.state.actions > 0:
@@ -105,10 +110,12 @@ class MultiCardBotDecider(OptimizedBotDecider):
                 if num_estates > 0 and num_provinces == 0 and estate.get_cost(player, game) <= player.state.money:
                     buy_cards.append((80, estate))
 
+            available_card_names: set[str] = set(c.name for c in game.supply.available_cards())
             for target_count, card in self.card_counts:
                 current_count = counter[card]
-                if current_count < target_count and card.get_cost(player, game) <= player.state.money:
-                    priority = card.get_cost(player, game)
+                cost = card.get_cost(player, game)
+                if current_count < target_count and cost.money <= player.state.money and cost.potions <= player.state.potions and card.name in available_card_names:
+                    priority = cost.money + (cost.potions * 2)
                     priority -= current_count / target_count
                     buy_cards.append((priority, card))
 
